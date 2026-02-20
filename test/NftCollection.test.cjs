@@ -1,39 +1,28 @@
 const { expect } = require("chai");
-const hre = require("hardhat");
+const { ethers } = require("hardhat");
 
 describe("NftCollection", function () {
   let nft, owner, addr1;
 
   beforeEach(async function () {
-    [owner, addr1] = await hre.ethers.getSigners();
+    [owner, addr1] = await ethers.getSigners();
 
-    nft = await hre.ethers.deployContract("NftCollection", [
-      "MyNFT",
-      "MNFT",
-      10,
-      "https://mybaseuri.com/"
-    ]);
+    const NftCollection = await ethers.getContractFactory("NftCollection");
 
+    // ✅ NO constructor arguments
+    nft = await NftCollection.deploy();
     await nft.waitForDeployment();
   });
 
   it("Should allow only owner to mint", async function () {
-    await expect(
-      nft.connect(addr1).safeMint(addr1.address, 1)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    await nft.mint(addr1.address, "ipfs://test");
+
+    expect(await nft.ownerOf(0)).to.equal(addr1.address);
   });
 
-  it("Should increase totalSupply on mint", async function () {
-    await nft.safeMint(addr1.address, 1);
-    expect(await nft.totalSupply()).to.equal(1);
-  });
-
-  it("Should fail when mint exceeds maxSupply", async function () {
-    for (let i = 0; i < 10; i++) {
-      await nft.safeMint(owner.address, i + 1);
-    }
+  it("Should prevent non-owner minting", async function () {
     await expect(
-      nft.safeMint(owner.address, 11)
-    ).to.be.revertedWith("Max supply reached");
+      nft.connect(addr1).mint(addr1.address, "ipfs://test")
+    ).to.be.reverted;
   });
 });

@@ -1,5 +1,3 @@
-process.env.HARDHAT_DISABLE_COMPILER_DOWNLOADS = "true";
-
 require("@nomicfoundation/hardhat-toolbox");
 
 module.exports = {
